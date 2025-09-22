@@ -1,48 +1,63 @@
 import 'package:flutter/material.dart';
 
-  void main()
-  {
-    runApp(MaterialApp(home:MyApp(),debugShowCheckedModeBanner: false,));
-  }
-  class MyApp extends StatelessWidget
-  {
+void main() {
+  runApp(MaterialApp(home: HomeScreen(), debugShowCheckedModeBanner: false));
+}
+
+class HomeScreen extends StatelessWidget {
   @override
-  Widget build(BuildContext context)
-  {
-  return Scaffold
-  (
-  appBar: AppBar(title: Text("My First App"),backgroundColor: Colors.grey,),
-  body: Center
-  (
-  child: Column
-  (
-  children:
-  [
-  SizedBox(height: 50,),
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text("profile screen"),
+          backgroundColor: Colors.blue,
+          centerTitle: true,
+        ),
+        body: SingleChildScrollView(
+            child: Center(
+              child: Row(
+                children:
+                [
+                  CircleAvatar
+                    (
 
-    Text("c",style: TextStyle(fontSize: 20.00,color: Colors.blueGrey),),
-    SizedBox(height: 15,),
-    Text("c++",style: TextStyle(fontSize: 20.00,color: Colors.grey),),
-    SizedBox(height: 15,),
-    Text("Java",style: TextStyle(fontSize: 20.00,color: Colors.blueGrey),),
-    SizedBox(height: 15,),
-    Text("c#",style: TextStyle(fontSize: 20.00,color: Colors.grey),),
-    SizedBox(height: 15,), 
-    Text("ASP.NET",style: TextStyle(fontSize: 20.00,color: Colors.blueGrey),),
-    SizedBox(height: 15,), 
-    Text("Wordpress",style: TextStyle(fontSize: 20.00,color: Colors.grey),),
-    SizedBox(height: 15,),
-    Text("Android",style: TextStyle(fontSize: 20.00,color: Colors.blueGrey),),
-    SizedBox(height: 15,),
-    Text("Networking",style: TextStyle(fontSize: 20.00,color: Colors.grey),),
-  ],
-  )
-
-  ),
+                    radius: 80,
+                    backgroundImage: NetworkImage(
+                        "https://www.shutterstock.com/image-photo/world-best-exotic-fruit-platter-260nw-2490229919.jpg"), // Add your image
+                  ),
+                  SizedBox(height: 16, width: 16,),
+                  Column
+                    (
+                    children:
+                    [
+                      Text('Ankita Gondaliya', style: TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold)),
+                      Text('Flutter Developer',
+                          style: TextStyle(color: Colors.grey)),
 
 
-  );
+                    ],
+
+
+
+                  ),
+                  Column(
+                    children: [
+                  Text("Likes : "),
+                  SizedBox(height: 20),
+                  SizedBox(height: 20),
+              ]
+                  )
+
+
+
+
+                ],
+              ),
+            )
+
+
+        )
+    );
   }
-
-  }
-  
+}
