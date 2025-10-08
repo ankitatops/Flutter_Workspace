@@ -1,53 +1,82 @@
+
 import 'package:flutter/material.dart';
-
-void main() {
-  runApp(new MaterialApp(home: new RadioButtonEx(),debugShowCheckedModeBanner: false,));
+void main()
+{
+  runApp(new MaterialApp(home: new CheckBoxEx()));
 }
 
-class RadioButtonEx extends StatefulWidget {
-  const RadioButtonEx({super.key});
+
+class CheckBoxEx extends StatefulWidget {
+  const CheckBoxEx({super.key});
 
   @override
-  State<RadioButtonEx> createState() => _RadioButtonExState();
+  State<CheckBoxEx> createState() => _checkBoxEx();
 }
 
-enum Gender { male, female }
-
-class _RadioButtonExState extends State<RadioButtonEx> {
-  Gender _gender = Gender.female;
+class _checkBoxEx extends State<CheckBoxEx>
+{
+  bool cricket = false;
+  bool reading = false;
+  bool music = false;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("RadioButton Example")),
-      body: Center(
-        child: Column(
-          children: [
-            ListTile(
-              title: const Text('Male'),
-              leading: Radio(
-                value: Gender.male,
-                groupValue: _gender,
-                onChanged: (value) {
-                  setState(() {
-                    _gender = value!;
+  Widget build(BuildContext context)
+  {
+    return Scaffold
+      (
+      appBar: AppBar(title: Text("Checkbox Example"),),
+      body: Center
+        (
+        child: Column
+          (
+          children:
+          [
+            CheckboxListTile
+              (
+                title: Text("Cricket"),
+                value: cricket,
+                onChanged:(value)
+                {
+                  setState(()
+                  {
+                    //cricket = true;
+                    this.cricket = value!;
                   });
-                },
-              ),
-            ),
+                }),
 
-            ListTile(
-              title: const Text('Female'),
-              leading: Radio(
-                value: Gender.female,
-                groupValue: _gender,
-                onChanged: (value) {
-                  setState(() {
-                    _gender = value!;
+            CheckboxListTile
+              (
+                title: Text("Reading"),
+                value: reading,
+                onChanged:(value)
+                {
+                  setState(()
+                  {
+                    //cricket = true;
+                    this.reading = value!;
                   });
-                },
-              ),
-            ),
+                }),
+
+            CheckboxListTile
+              (
+                title: Text("Music"),
+                value: music,
+                onChanged:(value)
+                {
+                  setState(()
+                  {
+                    //cricket = true;
+                    this.music = value!;
+                  });
+                }),
+            ElevatedButton(onPressed: ()
+            {
+              print("Cricket : $cricket");
+              print("Reading : $reading");
+              print("Music : $music");
+
+            }, child: Text("Submit")
+            )
           ],
         ),
       ),
