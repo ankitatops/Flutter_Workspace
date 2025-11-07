@@ -16,7 +16,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _obscurePassword = true;
   bool _acceptTerms = false;
-  late String _selectedCourse;
+  String? _selectedCourse;
   String _gender = "Male";
 
   final List<String> _courses = ["BCA", "BBA", "B.Sc", "BA", "MBA"];
@@ -72,14 +72,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   return null;
                 },
               ),
-
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: "Password",
                   suffixIcon: IconButton(
                     icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility),
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
                     onPressed: () {
                       setState(() {
                         _obscurePassword = !_obscurePassword;
@@ -88,8 +90,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 obscureText: _obscurePassword,
-                validator: (val) =>
-                val!.length < 6 ? "Password must be at least 6 characters" : null,
+                validator: (val) => val!.length < 6
+                    ? "Password must be at least 6 characters"
+                    : null,
               ),
 
               const SizedBox(height: 20),
@@ -121,7 +124,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Text(course),
                 ))
                     .toList(),
-                onChanged: (val) => setState(() => _selectedCourse = val!),
+                onChanged: (val) => setState(() => _selectedCourse = val),
                 validator: (val) =>
                 val == null ? "Please select a course" : null,
               ),
