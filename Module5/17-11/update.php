@@ -6,10 +6,11 @@
     $p_name = $_POST['p_name'];
     $p_price = $_POST['p_price'];
     $p_des = $_POST['p_des'];
+    $p_img = $_POST['p_img'];
    
 
 
-    $Sql_Query = "UPDATE ankita_products SET p_name='$p_name', p_price='$p_price',p_des='$p_des' WHERE id = '$id'";
+    $Sql_Query = "UPDATE ankita_products SET p_name='$p_name', p_price='$p_price',p_des='$p_des',p_img='$p_img' WHERE id = '$id'";
 
         if(mysqli_query($con,$Sql_Query))
         {
