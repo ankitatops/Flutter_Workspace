@@ -1,86 +1,184 @@
-import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'news_service.dart';
-import 'article.dart';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
-  runApp(NewsFeedApp());
+  runApp(MaterialApp(home: NewsScreen(), debugShowCheckedModeBanner: false));
 }
 
-class NewsFeedApp extends StatelessWidget {
+class NewsScreen extends StatefulWidget {
+  const NewsScreen({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'News Feed App',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: NewsFeedScreen(),debugShowCheckedModeBanner: false,
-    );
-  }
+  State<NewsScreen> createState() => _NewsScreenState();
 }
 
-class NewsFeedScreen extends StatefulWidget {
-  @override
-  _NewsFeedScreenState createState() => _NewsFeedScreenState();
-}
-
-class _NewsFeedScreenState extends State<NewsFeedScreen> {
-  late Future<List<Article>> _articles;
+class _NewsScreenState extends State<NewsScreen> {
+  List articles = [];
+  bool isLoading = false;
+  TextEditingController _searchController = TextEditingController(
+    text: "india",
+  );
 
   @override
   void initState() {
     super.initState();
-    _articles = NewsService().fetchArticles();
+    fetchNews("india");
   }
 
-  _openArticle(String url) async {
+  Future<void> fetchNews(String query) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    const String apiKey = '3671ac5c81dd4838bbd9c71b2fa58de5';
+    final String url =
+        'https://newsapi.org/v2/everything?q=$query&apiKey=$apiKey';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          articles = data['articles'];
+        });
+      } else {
+        throw Exception('Failed to load news');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error fetching news: $e')));
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _launchURL(String url) async {
     if (await canLaunch(url)) {
       await launch(url);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not open URL')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not open the news')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('News Feed')),
-      body: FutureBuilder<List<Article>>(
-        future: _articles,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No articles found.'));
-          }
-
-          List<Article> articles = snapshot.data!;
-          return ListView.builder(
-            itemCount: articles.length,
-            itemBuilder: (context, index) {
-              final article = articles[index];
-              return Card(
-                margin: EdgeInsets.all(8),
-                child: ListTile(
-                  leading: article.urlToImage != ''
-                      ? Image.network(
-                    article.urlToImage,
-                    width: 80,
-                    fit: BoxFit.cover,
-                  )
-                      : SizedBox.shrink(),
-                  title: Text(article.title),
-                  subtitle: Text(article.description),
-                  onTap: () => _openArticle(article.url),
+      appBar: AppBar(title: Text("News Feed")),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: "Enter country code or topic",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                 ),
-              );
-            },
-          );
-        },
+                SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    fetchNews(_searchController.text.trim());
+                  },
+                  child: Icon(Icons.search),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: isLoading
+                ? Center(child: CircularProgressIndicator())
+                : PageView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: articles.length,
+              itemBuilder: (context, index) {
+                final article = articles[index];
+                return Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Card(
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
+                          child: article['urlToImage'] != null
+                              ? Image.network(
+                            article['urlToImage'],
+                            height: 250,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          )
+                              : Container(
+                            height: 250,
+                            color: Colors.grey,
+                            child: const Center(
+                              child: Icon(
+                                Icons.image_not_supported,
+                                size: 80,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                article['title'] ?? 'No title',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                article['description'] ??
+                                    'No description',
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(height: 20),
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    if (article['url'] != null) {
+                                      _launchURL(article['url']);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.open_in_new),
+                                  label: const Text("Read More"),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -33,11 +33,11 @@ class _LoadingExampleState extends State<LoadingExample> {
   }
 
   Future<void> fetchData() async {
-    await Future.delayed(const Duration(seconds: 3)); // Simulate API call
+    await Future.delayed(const Duration(seconds: 3));
 
     setState(() {
       isLoading = false;
-      data = "✅ Data Loaded Successfully!";
+      data = " Data Loaded Successfully!";
     });
   }
 
