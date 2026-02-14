@@ -11,7 +11,7 @@ function response($status, $message, $data = null){
     exit;
 }
 
-$result = mysqli_query($conn, "SELECT id, name, phone, flat_no, email FROM users ORDER BY id DESC");
+$result = mysqli_query($conn, "SELECT id, name, phone, flat_no, email, image  FROM users ORDER BY id DESC");
 
 if(!$result){
     response("error", "Query failed: " . mysqli_error($conn), []);

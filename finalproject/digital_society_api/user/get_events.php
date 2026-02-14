@@ -11,7 +11,16 @@ function response($status, $message, $data = null){
     exit;
 }
 
-$q = "SELECT * FROM events ORDER BY event_date ASC";
+$base_url = "http://localhost/digital_society_api/uploads/events/";
+
+$event_date = $_POST['event_date'] ?? '';
+
+if ($event_date) {
+    $q = "SELECT * FROM events WHERE event_date = '$event_date' ORDER BY event_date ASC";
+} else {
+    $q = "SELECT * FROM events ORDER BY event_date ASC";
+}
+
 $r = mysqli_query($conn, $q);
 
 if (!$r) {
@@ -21,6 +30,11 @@ if (!$r) {
 $data = [];
 
 while ($row = mysqli_fetch_assoc($r)) {
+    if (!empty($row['image'])) {
+        $row['image_url'] = $base_url . $row['image'];
+    } else {
+        $row['image_url'] = null;
+    }
     $data[] = $row;
 }
 

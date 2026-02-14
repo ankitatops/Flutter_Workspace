@@ -23,12 +23,16 @@ echo "<li><a href='admin/update_problem_status.php'>update_problem_status</a></l
 echo "<li><a href='admin/get_all_users.php'>get_all_users</a></li>";
 echo "<li><a href='admin/get_all_staff.php'>get_all_staff</a></li>";
 echo "<li><a href='admin/get_all_visitors.php'>get_all_visitors</a></li>";
+echo "<li><a href='admin/update_staff_task_status.php'>update_staff_task_status</a></li>";
+echo "<li><a href='admin/update_maintenance.php'>update_maintenance</a></li>";
+
 echo "</ul>";
 
 echo "<h3>Auth APIs</h3>";
 echo "<ul>";
 echo "<li><a href='auth/login.php'>login</a></li>";
 echo "<li><a href='auth/register.php'>register</a></li>";
+echo "<li><a href='auth/logout.php'>logout</a></li>";
 echo "</ul>";
 
 echo "<h3>Config</h3>";
@@ -47,5 +51,9 @@ echo "<li><a href='user/get_staff_tasks.php'>get_staff_tasks</a></li>";
 echo "<li><a href='user/get_visitors.php'>get_visitors</a></li>";
 echo "<li><a href='user/send_feedback.php'>send_feedback</a></li>";
 echo "<li><a href='user/update_profile.php'>update_profile</a></li>";
+echo "<li><a href='user/upload_profile_image.php'>upload_profile_image</a></li>";
+echo "<li><a href='user/delete_problem.php'>delete_problem</a></li>";
+
+
 echo "</ul>";
 ?>
