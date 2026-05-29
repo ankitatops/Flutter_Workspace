@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'Screens/notification_screen.dart';
+import 'Screens/notifiction_service.dart' show NotificationService;
 import 'Screens/splash_screen.dart';
+import 'Screens/login_screen.dart';
+import 'services/api_service.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
- // WidgetsFlutterBinding.ensureInitialized();
+  // Local notifications init
+  await NotificationService.init();
+  NotificationService.startPolling();
 
- // await Firebase.initializeApp();
-
-  runApp(
-    const MyApp(),
-  );
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -19,7 +22,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return ScreenUtilInit(
       designSize: const Size(375, 812),
       minTextAdapt: true,
@@ -27,6 +29,10 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
+          navigatorKey: ApiService.navigatorKey,
+          routes: {
+            '/login': (context) => const LoginScreen(),
+          },
           home: const SplashScreen(),
         );
       },

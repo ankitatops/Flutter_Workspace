@@ -1,14 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static const String baseUrl = 'http://194.36.85.234';
 
-  // ─── TOKEN KEYS ───────────────────────────────────────────────────────────
   static const String _accessKey = 'access_token';
   static const String _refreshKey = 'refresh_token';
+
+  static final GlobalKey<NavigatorState> navigatorKey =
+  GlobalKey<NavigatorState>();
 
   // ─────────────────────────────────────────────────────────────────────────
   //  TOKEN HELPERS
@@ -29,6 +32,7 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_accessKey);
     await prefs.remove(_refreshKey);
+    await prefs.setBool('is_logged_in', false);
   }
 
   static Future<Map<String, String>> _authHeaders() async {
@@ -40,7 +44,7 @@ class ApiService {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  //  TOKEN REFRESH
+  //  TOKEN REFRESH — 401 aave to navo access token lo, session expire na thay
   // ─────────────────────────────────────────────────────────────────────────
 
   static Future<bool> refreshAccessToken() async {
@@ -48,18 +52,34 @@ class ApiService {
     final refresh = prefs.getString(_refreshKey);
     if (refresh == null) return false;
 
-    final res = await http.post(
-      Uri.parse('$baseUrl/api/mobile/auth/refresh/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'refresh': refresh}),
-    );
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/mobile/auth/refresh/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refresh': refresh}),
+      );
 
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      await prefs.setString(_accessKey, data['access']);
-      return true;
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        await prefs.setString(_accessKey, data['access']);
+        return true; // navo token mali gayo — session continue
+      }
+      return false; // refresh pan expire — logout karvun padse
+    } catch (_) {
+      return false;
     }
-    return false;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  //  SESSION EXPIRY — refresh pan fail thay tyare j logout
+  // ─────────────────────────────────────────────────────────────────────────
+
+  static Future<void> _handleSessionExpiry() async {
+    await clearTokens();
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -67,22 +87,19 @@ class ApiService {
   // ─────────────────────────────────────────────────────────────────────────
 
   static Future<Map<String, dynamic>> login(
-    String email,
-    String password,
-  ) async {
+      String email,
+      String password,
+      ) async {
     final res = await http.post(
       Uri.parse('$baseUrl/api/mobile/auth/login/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
     );
-
     final data = jsonDecode(res.body);
-
     if (res.statusCode == 200) {
       await saveTokens(data['access'], data['refresh']);
       return data;
     }
-
     throw Exception(
       data['detail'] ?? data['non_field_errors']?[0] ?? 'Login failed',
     );
@@ -92,13 +109,11 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final refresh = prefs.getString(_refreshKey);
     final headers = await _authHeaders();
-
     await http.post(
       Uri.parse('$baseUrl/api/mobile/auth/logout/'),
       headers: headers,
       body: jsonEncode({'refresh': refresh ?? ''}),
     );
-
     await clearTokens();
   }
 
@@ -117,14 +132,11 @@ class ApiService {
     final body = <String, dynamic>{};
     if (fullName != null) body['full_name'] = fullName;
     if (phone != null) body['phone'] = phone;
-
     return await _patchRequest('/api/mobile/profile/', body);
   }
 
   static Future<void> saveFcmToken(String fcmToken) async {
-    await _postRequest('/api/mobile/profile/fcm-token/', {
-      'fcm_token': fcmToken,
-    });
+    await _postRequest('/api/mobile/profile/fcm-token/', {'fcm_token': fcmToken});
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -139,22 +151,12 @@ class ApiService {
   //  4. ATTENDANCE
   // ─────────────────────────────────────────────────────────────────────────
 
-  static Future<Map<String, dynamic>> getAttendanceHistory(
-    int month,
-    int year,
-  ) async {
-    return await _getRequest(
-      '/api/mobile/attendance/history/?month=$month&year=$year',
-    );
+  static Future<Map<String, dynamic>> getAttendanceHistory(int month, int year) async {
+    return await _getRequest('/api/mobile/attendance/history/?month=$month&year=$year');
   }
 
-  static Future<Map<String, dynamic>> getAttendanceReport(
-    int month,
-    int year,
-  ) async {
-    return await _getRequest(
-      '/api/mobile/attendance/report/?month=$month&year=$year',
-    );
+  static Future<Map<String, dynamic>> getAttendanceReport(int month, int year) async {
+    return await _getRequest('/api/mobile/attendance/report/?month=$month&year=$year');
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -189,9 +191,7 @@ class ApiService {
   //  7. NOTIFICATIONS
   // ─────────────────────────────────────────────────────────────────────────
 
-  static Future<Map<String, dynamic>> getNotifications({
-    String filter = 'all',
-  }) async {
+  static Future<Map<String, dynamic>> getNotifications({String filter = 'all'}) async {
     return await _getRequest('/api/mobile/notifications/?filter=$filter');
   }
 
@@ -210,7 +210,7 @@ class ApiService {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  //  8. LEAVE REQUESTS (Educational orgs only)
+  //  8. LEAVE REQUESTS
   // ─────────────────────────────────────────────────────────────────────────
 
   static Future<Map<String, dynamic>> getLeaveRequests() async {
@@ -244,6 +244,22 @@ class ApiService {
       );
       final streamed = await request.send();
       final res = await http.Response.fromStream(streamed);
+
+      if (res.statusCode == 401) {
+        final refreshed = await refreshAccessToken();
+        if (refreshed) {
+          return await submitLeaveRequest(
+            reason: reason,
+            description: description,
+            startDate: startDate,
+            endDate: endDate,
+            certificateFile: certificateFile,
+          );
+        } else {
+          await _handleSessionExpiry();
+          throw Exception('Session expired');
+        }
+      }
       return _parseResponse(res);
     } else {
       return await _postRequest('/api/mobile/leave-requests/', {
@@ -261,46 +277,100 @@ class ApiService {
 
   static Future<void> withdrawLeaveRequest(String leaveId) async {
     final headers = await _authHeaders();
-    final res = await http.delete(
+    var res = await http.delete(
       Uri.parse('$baseUrl/api/mobile/leave-requests/$leaveId/'),
       headers: headers,
     );
+    if (res.statusCode == 401) {
+      final refreshed = await refreshAccessToken();
+      if (refreshed) {
+        final newHeaders = await _authHeaders();
+        res = await http.delete(
+          Uri.parse('$baseUrl/api/mobile/leave-requests/$leaveId/'),
+          headers: newHeaders,
+        );
+      } else {
+        await _handleSessionExpiry();
+        throw Exception('Session expired');
+      }
+    }
     _handleStatus(res);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  //  PRIVATE HELPERS
+  //  PRIVATE HELPERS — auto refresh retry logic
   // ─────────────────────────────────────────────────────────────────────────
 
   static Future<Map<String, dynamic>> _getRequest(String path) async {
     final headers = await _authHeaders();
-    final res = await http.get(Uri.parse('$baseUrl$path'), headers: headers);
+    var res = await http.get(Uri.parse('$baseUrl$path'), headers: headers);
+
+    if (res.statusCode == 401) {
+      final refreshed = await refreshAccessToken();
+      if (refreshed) {
+        final newHeaders = await _authHeaders();
+        res = await http.get(Uri.parse('$baseUrl$path'), headers: newHeaders);
+      } else {
+        await _handleSessionExpiry();
+        throw Exception('Session expired — please login again');
+      }
+    }
     return _parseResponse(res);
   }
 
   static Future<Map<String, dynamic>> _postRequest(
-    String path,
-    Map<String, dynamic> body,
-  ) async {
+      String path,
+      Map<String, dynamic> body,
+      ) async {
     final headers = await _authHeaders();
-    final res = await http.post(
+    var res = await http.post(
       Uri.parse('$baseUrl$path'),
       headers: headers,
       body: jsonEncode(body),
     );
+
+    if (res.statusCode == 401) {
+      final refreshed = await refreshAccessToken();
+      if (refreshed) {
+        final newHeaders = await _authHeaders();
+        res = await http.post(
+          Uri.parse('$baseUrl$path'),
+          headers: newHeaders,
+          body: jsonEncode(body),
+        );
+      } else {
+        await _handleSessionExpiry();
+        throw Exception('Session expired — please login again');
+      }
+    }
     return _parseResponse(res);
   }
 
   static Future<Map<String, dynamic>> _patchRequest(
-    String path,
-    Map<String, dynamic> body,
-  ) async {
+      String path,
+      Map<String, dynamic> body,
+      ) async {
     final headers = await _authHeaders();
-    final res = await http.patch(
+    var res = await http.patch(
       Uri.parse('$baseUrl$path'),
       headers: headers,
       body: jsonEncode(body),
     );
+
+    if (res.statusCode == 401) {
+      final refreshed = await refreshAccessToken();
+      if (refreshed) {
+        final newHeaders = await _authHeaders();
+        res = await http.patch(
+          Uri.parse('$baseUrl$path'),
+          headers: newHeaders,
+          body: jsonEncode(body),
+        );
+      } else {
+        await _handleSessionExpiry();
+        throw Exception('Session expired — please login again');
+      }
+    }
     return _parseResponse(res);
   }
 
@@ -324,11 +394,13 @@ class ApiService {
           body['detail'] ?? body.values.first?.toString() ?? 'Validation error',
         );
       case 401:
-        throw Exception('Token expire thayo — please re-login karo');
+        throw Exception('Session expired — please login again');
       case 403:
-        throw Exception(body['detail'] ?? 'Permission denied (403). Backend returned no detail.');
+        throw Exception(
+          body['detail'] ?? 'Permission denied (403).',
+        );
       case 404:
-        throw Exception('Data found nathi');
+        throw Exception('No data found');
       default:
         throw Exception('Server error: ${res.statusCode}');
     }

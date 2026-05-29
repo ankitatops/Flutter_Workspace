@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-
 import '../services/api_service.dart';
 import 'analytics_report_screen.dart';
 import 'calendar_screen.dart';
@@ -26,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int unreadCount = 0;
   List<dynamic> notificationsList = [];
   bool isLoading = true;
+  int selectedIndex = 0;
 
   @override
   void initState() {
@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       try {
-        final analytics = await ApiService.getAnalytics(months: 5);
+        final analytics = await ApiService.getAnalytics(months: 1);
         setState(() => analyticsData = analytics);
       } catch (e) {
         debugPrint("Analytics error (ignoring): $e");
@@ -85,12 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ? ((present / total) * 100).toStringAsFixed(1)
         : (analyticsData?['attendance_percentage'] ?? 0).toString();
 
-    final semPct = (analyticsData?['attendance_percentage'] ?? 0).toString();
-    final overallPct =
-        (analyticsData?['punctuality_percentage'] ??
-                analyticsData?['attendance_percentage'] ??
-                0)
-            .toString();
+    final semPct = attPct;
+    final overallPct = attPct;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D1A09),
@@ -105,377 +101,409 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _navItem(icon: Icons.home_rounded, isActive: true, onTap: () {}),
+            _navItem(
+              icon: Icons.home_rounded,
+              isActive: selectedIndex == 0,
+              onTap: () {
+                setState(() {
+                  selectedIndex = 0;
+                });
+              },
+            ),
             _navItem(
               icon: Icons.bar_chart_rounded,
-              isActive: false,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AnalyticsReportScreen(),
-                ),
-              ),
+              isActive: selectedIndex == 1,
+              onTap: () {
+                setState(() {
+                  selectedIndex = 1;
+                });
+              },
             ),
             _navItem(
               icon: Icons.calendar_month_rounded,
-              isActive: false,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CalendarScreen()),
-              ),
+              isActive: selectedIndex == 2,
+              onTap: () {
+                setState(() {
+                  selectedIndex = 2;
+                });
+              },
             ),
             _navItem(
               icon: Icons.settings_rounded,
-              isActive: false,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              ),
+              isActive: selectedIndex == 3,
+              onTap: () {
+                setState(() {
+                  selectedIndex = 3;
+                });
+              },
             ),
           ],
         ),
       ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadDashboardData,
-          color: const Color(0xFF8CC63F),
-          backgroundColor: const Color(0xFF111C0D),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(horizontal: 18.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 14.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ProfileScreen(),
-                        ),
-                      ).then((_) => _loadDashboardData()),
-                      child: Container(
-                        width: 40.w,
-                        height: 40.w,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(.06),
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(.08),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.menu_rounded,
-                          color: Colors.white,
-                          size: 20.sp,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0x1A8CC63F),
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(color: const Color(0x308CC63F)),
-                      ),
-                      child: Row(
+      body: selectedIndex == 0
+          ? SafeArea(
+              child: RefreshIndicator(
+                onRefresh: _loadDashboardData,
+                color: const Color(0xFF8CC63F),
+                backgroundColor: const Color(0xFF111C0D),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.symmetric(horizontal: 18.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 14.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Container(
-                            width: 22.w,
-                            height: 22.w,
-                            decoration: const BoxDecoration(
-                              color: Color(0x338CC63F),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.person_rounded,
-                              color: const Color(0xFF8CC63F),
-                              size: 13.sp,
-                            ),
-                          ),
-                          SizedBox(width: 6.w),
-                          Text(
-                            name,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const NotificationScreen(),
-                        ),
-                      ).then((_) => _loadDashboardData()),
-                      child: Container(
-                        width: 40.w,
-                        height: 40.w,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(.06),
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(.08),
-                          ),
-                        ),
-                        child: Stack(
-                          children: [
-                            Center(
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProfileScreen(),
+                              ),
+                            ).then((_) => _loadDashboardData()),
+                            child: Container(
+                              width: 40.w,
+                              height: 40.w,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(.06),
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(.08),
+                                ),
+                              ),
                               child: Icon(
-                                Icons.notifications_none_rounded,
+                                Icons.menu_rounded,
                                 color: Colors.white,
                                 size: 20.sp,
                               ),
                             ),
-                            if (unreadCount > 0)
-                              Positioned(
-                                right: 8.w,
-                                top: 8.h,
-                                child: Container(
-                                  width: 8.w,
-                                  height: 8.w,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF8CC63F),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: const Color(0xFF0D1A09),
-                                      width: 1.5.w,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 22.h),
-                Text(
-                  "Hello, $name",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(height: 4.h),
-                Text(
-                  getDate(),
-                  style: TextStyle(color: Colors.white38, fontSize: 12.sp),
-                ),
-                SizedBox(height: 20.h),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(20.w),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A3010),
-                    borderRadius: BorderRadius.circular(24.r),
-                    border: Border.all(color: const Color(0x308CC63F)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 10.w,
-                                  vertical: 4.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0x1A8CC63F),
-                                  borderRadius: BorderRadius.circular(20.r),
-                                  border: Border.all(
-                                    color: const Color(0x508CC63F),
-                                  ),
-                                ),
-                                child: Text(
-                                  "PRESENT TODAY",
-                                  style: TextStyle(
-                                    color: const Color(0xFF8CC63F),
-                                    fontSize: 10.sp,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.8.w,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 12.h),
-                              Text(
-                                getTime(),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 30.sp,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.5.w,
-                                ),
-                              ),
-                              SizedBox(height: 3.h),
-                              Text(
-                                "Check-in time  ·  On Time",
-                                style: TextStyle(
-                                  color: Colors.white38,
-                                  fontSize: 11.sp,
-                                ),
-                              ),
-                            ],
                           ),
                           Container(
-                            width: 64.w,
-                            height: 64.w,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12.w,
+                              vertical: 6.h,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0x1A8CC63F),
-                              borderRadius: BorderRadius.circular(18.r),
+                              borderRadius: BorderRadius.circular(20.r),
                               border: Border.all(
-                                color: const Color(0x408CC63F),
+                                color: const Color(0x308CC63F),
                               ),
                             ),
-                            child: Icon(
-                              Icons.how_to_reg_rounded,
-                              color: const Color(0xFF8CC63F),
-                              size: 30.sp,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 22.w,
+                                  height: 22.w,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0x338CC63F),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.person_rounded,
+                                    color: const Color(0xFF8CC63F),
+                                    size: 13.sp,
+                                  ),
+                                ),
+                                SizedBox(width: 6.w),
+                                Text(
+                                  name,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const NotificationScreen(),
+                              ),
+                            ).then((_) => _loadDashboardData()),
+                            child: Container(
+                              width: 40.w,
+                              height: 40.w,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(.06),
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(.08),
+                                ),
+                              ),
+                              child: Stack(
+                                children: [
+                                  Center(
+                                    child: Icon(
+                                      Icons.notifications_none_rounded,
+                                      color: Colors.white,
+                                      size: 20.sp,
+                                    ),
+                                  ),
+                                  if (unreadCount > 0)
+                                    Positioned(
+                                      right: 8.w,
+                                      top: 8.h,
+                                      child: Container(
+                                        width: 8.w,
+                                        height: 8.w,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF8CC63F),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: const Color(0xFF0D1A09),
+                                            width: 1.5.w,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 18.h),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          vertical: 14.h,
-                          horizontal: 10.w,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(.04),
-                          borderRadius: BorderRadius.circular(14.r),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _inlineStat("$attPct%", "This Month"),
-                            _verticalDivider(),
-                            _inlineStat("$semPct%", "Semester"),
-                            _verticalDivider(),
-                            _inlineStat("$overallPct%", "Overall"),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 22.h),
-                Text(
-                  "Quick Actions",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 12.h),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AttendanceReportScreen(),
-                          ),
-                        ),
-                        child: _quickCard(
-                          "View Report",
-                          "Attendance details",
-                          Icons.description_rounded,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 10.w),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const LeaveRequestScreen(),
-                          ),
-                        ),
-                        child: _quickCard(
-                          "Apply Leave",
-                          "Request in few taps",
-                          Icons.calendar_month_rounded,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 22.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Recent Activity",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const NotificationScreen(),
-                        ),
-                      ),
-                      child: Text(
-                        "View All",
+                      SizedBox(height: 22.h),
+                      Text(
+                        "Hello, $name",
                         style: TextStyle(
-                          color: const Color(0xFF8CC63F),
+                          color: Colors.white,
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        getDate(),
+                        style: TextStyle(
+                          color: Colors.white38,
                           fontSize: 12.sp,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12.h),
-                if (isLoading && notificationsList.isEmpty)
-                  const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF8CC63F)),
-                  )
-                else if (notificationsList.isEmpty)
-                  Column(
-                    children: [
-                      _activity("Checked In", "Today, ${getTime()}", "On Time"),
-                      _activity("Leave Approved", "dd mm yyyy", "1 Day"),
-                      _activity("Holiday", "dd mm yyyy", "Notified"),
+                      SizedBox(height: 20.h),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(20.w),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A3010),
+                          borderRadius: BorderRadius.circular(24.r),
+                          border: Border.all(color: const Color(0x308CC63F)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 10.w,
+                                        vertical: 4.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0x1A8CC63F),
+                                        borderRadius: BorderRadius.circular(
+                                          20.r,
+                                        ),
+                                        border: Border.all(
+                                          color: const Color(0x508CC63F),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        "PRESENT TODAY",
+                                        style: TextStyle(
+                                          color: const Color(0xFF8CC63F),
+                                          fontSize: 10.sp,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.8.w,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    Text(
+                                      getTime(),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 30.sp,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: -0.5.w,
+                                      ),
+                                    ),
+                                    SizedBox(height: 3.h),
+                                    Text(
+                                      "Check-in time  ·  On Time",
+                                      style: TextStyle(
+                                        color: Colors.white38,
+                                        fontSize: 11.sp,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  width: 64.w,
+                                  height: 64.w,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x1A8CC63F),
+                                    borderRadius: BorderRadius.circular(18.r),
+                                    border: Border.all(
+                                      color: const Color(0x408CC63F),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.how_to_reg_rounded,
+                                    color: const Color(0xFF8CC63F),
+                                    size: 30.sp,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 18.h),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                vertical: 14.h,
+                                horizontal: 10.w,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(.04),
+                                borderRadius: BorderRadius.circular(14.r),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  _inlineStat("$attPct%", "This Month"),
+                                  _verticalDivider(),
+                                  _inlineStat("$semPct%", "Semester"),
+                                  _verticalDivider(),
+                                  _inlineStat("$overallPct%", "Overall"),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 22.h),
+                      Text(
+                        "Quick Actions",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 12.h),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const AttendanceReportScreen(),
+                                ),
+                              ),
+                              child: _quickCard(
+                                "View Report",
+                                "Attendance details",
+                                Icons.description_rounded,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10.w),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const LeaveRequestScreen(),
+                                ),
+                              ),
+                              child: _quickCard(
+                                "Apply Leave",
+                                "Request in few taps",
+                                Icons.calendar_month_rounded,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 22.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Recent Activity",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const NotificationScreen(),
+                              ),
+                            ),
+                            child: Text(
+                              "View All",
+                              style: TextStyle(
+                                color: const Color(0xFF8CC63F),
+                                fontSize: 12.sp,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12.h),
+                      if (isLoading && notificationsList.isEmpty)
+                        const Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF8CC63F),
+                          ),
+                        )
+                      else if (notificationsList.isEmpty)
+                        Column(
+                          children: [
+                            _activity(
+                              "Checked In",
+                              "Today, ${getTime()}",
+                              "On Time",
+                            ),
+                            _activity("Leave Approved", "dd mm yyyy", "1 Day"),
+                            _activity("Holiday", "dd mm yyyy", "Notified"),
+                          ],
+                        )
+                      else
+                        ...notificationsList.take(3).map((n) {
+                          final title =
+                              n['title'] ?? n['message'] ?? "Notification";
+                          final sub = n['time_ago'] ?? n['created_at'] ?? "";
+                          return _activity(title, sub, "Notified");
+                        }),
+                      SizedBox(height: 24.h),
                     ],
-                  )
-                else
-                  ...notificationsList.take(3).map((n) {
-                    final title = n['title'] ?? n['message'] ?? "Notification";
-                    final sub = n['time_ago'] ?? n['created_at'] ?? "";
-                    return _activity(title, sub, "Notified");
-                  }),
-                SizedBox(height: 24.h),
-              ],
-            ),
-          ),
-        ),
-      ),
+                  ),
+                ),
+              ),
+            )
+          : selectedIndex == 1
+          ? const AnalyticsReportScreen()
+          : selectedIndex == 2
+          ? const CalendarScreen()
+          : const SettingsScreen(),
     );
   }
 
